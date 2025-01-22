@@ -4,10 +4,11 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from langchain_core.output_parsers import StrOutputParser
 from dotenv import load_dotenv
-
+from langchain_teddynote import logging
 
 # API KEY 정보로드
 load_dotenv()
+logging.langsmith("CH01-Basic")
 
 st.title("LangGPT")
 
@@ -29,6 +30,23 @@ def add_message(role, message):
     st.session_state["messages"].append(ChatMessage(role=role, content=message))
 
 
+# 체인 생성
+def create_chain():
+    # prompt | llm | output_parser
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", "당신은 친절한 AI 어시스턴트 입니다."),
+            ("user", "#Question:\n{question}"),
+        ]
+    )
+    llm = ChatOpenAI(model_name="gpt-4o-mini", temperature=0)
+
+    output_parser = StrOutputParser()
+
+    chain = prompt | llm | output_parser
+    return chain
+
+
 print_messages()
 # 사용자의 입력
 user_input = st.chat_input("궁금한 내용을 물어보세요!")
@@ -36,8 +54,13 @@ user_input = st.chat_input("궁금한 내용을 물어보세요!")
 if user_input:
     # 웹에 출력
     st.chat_message("user").write(user_input)
-    st.chat_message("assistant").write(user_input)
+    # 체인 생성
+    chain = create_chain()
+    ai_answer = chain.invoke({"question": user_input})
+
+    # AI의 답변
+    st.chat_message("assistant").write(ai_answer)
 
     # 대화기록을 저장
     add_message("user", user_input)
-    add_message("assistant", user_input)
+    add_message("assistant", ai_answer)
