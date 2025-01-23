@@ -55,7 +55,6 @@ def create_chain(prompt_type):
 
     if prompt_type == "SNS 게시글":
         
-
         prompt = load_prompt("prompts/sns.yaml", encoding="utf-8")
         pass
     elif prompt_type == "요약":
