@@ -4,10 +4,9 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import load_prompt
-from langchain import hub
 from dotenv import load_dotenv
 from langchain_teddynote import logging
-
+import glob
 
 # API KEY 정보로드
 load_dotenv()
@@ -23,9 +22,10 @@ if "messages" not in st.session_state:
 with st.sidebar:
     clear_btn = st.button("대화 초기화")
 
-    selected_prompt = st.selectbox(
-        "프롬프트 선택", ("기본", "SNS 게시글", "요약"), index=0
-    )
+    prompt_files = glob.glob("prompts/*.yaml")
+
+    selected_prompt = st.selectbox("프롬프트 선택", prompt_files, index=0)
+    task_input = st.text_input("TASK 입력", "")
 
 
 # 이전 대화를 출력
@@ -40,27 +40,16 @@ def add_message(role, message):
 
 
 # 체인 생성
-def create_chain(prompt_type):
+def create_chain(prompt_filepath, task=""):
     # prompt | llm | output_parser
 
-    # 프롬프트(기본)
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            (
-                "system",
-                "당신은 친절한 AI 어시스턴트 입니다. 다음의 질문에 간결하게 답변해 주세요.",
-            ),
-            ("user", "#Question:\n{question}"),
-        ]
-    )
+    # prompt 적용
+    prompt = load_prompt(prompt_filepath, encoding="utf-8")
 
-    if prompt_type == "SNS 게시글":
+    if task:
+        prompt = prompt.partial(task=task)
 
-        prompt = load_prompt("prompts/sns.yaml", encoding="utf-8")
-
-    elif prompt_type == "요약":
-
-        prompt = hub.pull("teddynote/chain-of-density-korean:946ed62d")
+    print(prompt)
 
     llm = ChatOpenAI(model_name="gpt-4o-mini", temperature=0)
 
@@ -82,7 +71,7 @@ if user_input:
     # 웹에 출력
     st.chat_message("user").write(user_input)
     # 체인 생성
-    chain = create_chain(selected_prompt)
+    chain = create_chain(selected_prompt, task=task_input)
 
     response = chain.stream({"question": user_input})
     with st.chat_message("assistant"):
