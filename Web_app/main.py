@@ -4,6 +4,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import load_prompt
+from langchain import hub
 from dotenv import load_dotenv
 from langchain_teddynote import logging
 
@@ -12,7 +13,7 @@ from langchain_teddynote import logging
 load_dotenv()
 logging.langsmith("CH01-Basic")
 
-st.title("LangGPT")
+st.title("LangGPT🐱‍👤✨")
 
 # 처음 한번만 실행
 if "messages" not in st.session_state:
@@ -54,11 +55,12 @@ def create_chain(prompt_type):
     )
 
     if prompt_type == "SNS 게시글":
-        
+
         prompt = load_prompt("prompts/sns.yaml", encoding="utf-8")
-        pass
+
     elif prompt_type == "요약":
-        pass
+
+        prompt = hub.pull("teddynote/chain-of-density-korean:946ed62d")
 
     llm = ChatOpenAI(model_name="gpt-4o-mini", temperature=0)
 
@@ -80,7 +82,7 @@ if user_input:
     # 웹에 출력
     st.chat_message("user").write(user_input)
     # 체인 생성
-    chain = create_chain("적절한 프롬프트")
+    chain = create_chain(selected_prompt)
 
     response = chain.stream({"question": user_input})
     with st.chat_message("assistant"):
